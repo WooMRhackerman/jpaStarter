@@ -2,6 +2,7 @@ package jpabook.jpashop.domain;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.persistence.CascadeType;
@@ -18,12 +19,15 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name="orders")
 @Getter @Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Order {
 	@Id @GeneratedValue
 	@Column(name="order_id")
@@ -60,4 +64,46 @@ public class Order {
 		this.delivery = delivery;
 		delivery.setOrder(this);
 	}
+	
+	//== 생성메서드 ==//
+	public static Order createOrder(Member member, Delivery delivery, OrderItem... orderItem) {
+		Order order = new Order();
+		order.setMember(member);
+		order.setDelivery(delivery);
+		for (OrderItem orderItem2 : orderItem) {
+			order.addOrderItem(orderItem2);
+		}
+		order.setOrderStatus(OrderStatus.ORDER);
+		order.setOrderDate(LocalDateTime.now());
+		
+		return order;
+	}
+	
+	//==비즈니스 로직==//
+	/*
+	 * 주문취소
+	*/
+	public void cancel() {
+		if (delivery.getStatus() == DeliveryStatus.COMP) {
+			throw new IllegalStateException("이미 배송이 완료된 상품은 취소가 불가능합니다.");
+		}
+		
+		this.setOrderStatus(OrderStatus.CANCEL);
+		for (OrderItem orderItem : orderitems) {
+			orderItem.cancel();
+		}
+	}
+	
+	//== 조회로직 ==//
+	/*
+	 * 전체주문가격
+	*/
+	public int getTotalPrice() {
+		int totalPrice = 0;
+		for (OrderItem orderItem : orderitems) {
+			totalPrice += orderItem.getTotalPrice();
+		}
+		return totalPrice;
+	}
+	
 }
