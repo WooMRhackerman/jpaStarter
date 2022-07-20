@@ -19,6 +19,8 @@ public class ItemRepository {
 		if (item.getId()==null) {
 			em.persist(item);
 		}else {
+			//자동으로 영속성 엔티티를 가져와 전체 컬럼을 업데이트 침 영속성 엔티티를 반환함
+			//모든 컬럼을 업데이트 쳐버리 때문에 위험함
 			em.merge(item);
 		}
 	}
