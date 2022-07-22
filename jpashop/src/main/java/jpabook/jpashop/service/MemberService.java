@@ -42,4 +42,10 @@ public class MemberService {
 			throw new IllegalStateException("동일한 이름의 회원이 있습니다.");
 		}
 	}
+	@Transactional
+	public void update(Long id, String name) {
+		Member findOne = memberRepository.findOne(id);
+		findOne.setName(name);
+		
+	}
 }
