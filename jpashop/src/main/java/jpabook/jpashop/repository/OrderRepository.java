@@ -1,5 +1,6 @@
 package jpabook.jpashop.repository;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -16,14 +17,20 @@ import javax.persistence.criteria.Root;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.util.StringUtils;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
+import jpabook.jpashop.api.OrderSimpleApiController;
+import jpabook.jpashop.domain.Address;
 import jpabook.jpashop.domain.Member;
 import jpabook.jpashop.domain.Order;
+import jpabook.jpashop.domain.OrderStatus;
+import jpabook.jpashop.domain.QDelivery;
+import jpabook.jpashop.domain.QMember;
 import jpabook.jpashop.domain.QOrder;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 @Repository
@@ -34,6 +41,10 @@ public class OrderRepository {
 	@Autowired JPAQueryFactory queryFactory;
 	
 	private QOrder qOrder = QOrder.order;
+	
+	private QMember qMember = QMember.member;
+	
+	private QDelivery qDelivery = QDelivery.delivery;
 
 	public void save(Order order) {
 		em.persist(order);
@@ -74,12 +85,42 @@ public class OrderRepository {
 //	}
 	
 	public List<Order> findAllqueryDsl(OrderSearch os){
-		return queryFactory.selectFrom(qOrder).where(qName(os),
-													qStatus(os))
+		return queryFactory.selectFrom(qOrder)
+								.leftJoin(qOrder.member , qMember).fetchJoin()
+								.leftJoin(qOrder.delivery , qDelivery).fetchJoin()
+							.where(qName(os),qStatus(os))
 							.orderBy(qOrder.orderDate.desc())
 							.fetch();
 												
-	};
+	}
+	
+	public List<SimpleOrderDto> findAllqueryDslWithDto(OrderSearch os){
+		return queryFactory.select(Projections.constructor(SimpleOrderDto.class
+				, qOrder.id, qOrder.member.name, qOrder.orderDate, qOrder.orderStatus, qOrder.delivery.address))
+							.from(qOrder)
+								.leftJoin(qOrder.member , qMember)
+								.leftJoin(qOrder.delivery , qDelivery)
+							.where(qName(os),qStatus(os))
+							.orderBy(qOrder.orderDate.desc())
+							.fetch();
+												
+	}
+	
+	
+	public List<Order> findAllWithMemberDelivery() {
+		return em.createQuery("select o from Order o"+	
+						" join fetch o.member m"+ 
+						" join fetch o.delivery d", Order.class).getResultList();
+	}
+	
+
+	public List<SimpleOrderDto> findOrderDto() {
+		return em.createQuery("select new jpabook.jpashop.repository.SimpleOrderDto(o.id , m.name , o.orderDate , o.orderStatus , d.address)"+
+				" from Order o"+	
+				" join o.member m"+ 
+				" join o.delivery d", SimpleOrderDto.class).getResultList();
+	}
+
 	
 	//동적쿼리용 메소드 START
 	//이름
@@ -96,5 +137,6 @@ public class OrderRepository {
 		}
 		return qOrder.orderStatus.eq(os.getOrderStatus());
 	}
+
 
 }
