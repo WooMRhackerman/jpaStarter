@@ -12,6 +12,7 @@ spring:
       hibernate: 
         #show_sql: true 
         format_sql: true
+        default_batch_fetch_size: 100  #this is for jpa collection query..very important
   Output:
     ansi:
       enabled: always
