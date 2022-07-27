@@ -2,8 +2,11 @@ package jpabook.jpashop.repository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -155,6 +158,42 @@ public class OrderRepository {
 		return fetch;										
 	}
 	
+	public List<OrderDto> findAllqueryDslWithDto3(OrderSearch os) {
+		 List<OrderDto> fetch = queryFactory.select(Projections.constructor(OrderDto.class
+					, qOrder.id, qOrder.member.name, qOrder.orderDate, qOrder.orderStatus, qOrder.delivery.address))
+								.from(qOrder)
+									.leftJoin(qOrder.member , qMember)
+									.leftJoin(qOrder.delivery , qDelivery)
+								.where(qName(os),qStatus(os))
+								.orderBy(qOrder.orderDate.desc())
+								.fetch();
+		 List<Long> collect = fetch.stream().map(o -> o.getId()).collect(Collectors.toList());
+		 	
+		 List<OrderItemDto> fetch2 = queryFactory.select(Projections.constructor(OrderItemDto.class 
+				 ,qOrderItem.order.id , qOrderItem.item.name , qOrderItem.orderPrice , qOrderItem.count))
+		 			.from(qOrderItem).where(qOrderItem.order.id.in(collect)).fetch();
+		
+		 Map<Long, List<OrderItemDto>> collect2 = fetch2.stream().collect(Collectors.groupingBy(i -> i.getOrderId()));
+		 
+		 fetch.forEach(o -> o.setOrderItems(collect2.get(o.getId())));
+		return fetch;		
+	}
+	
+	public List<OrderFlatDto> findAllqueryDslWithDto4(OrderSearch os) {
+		
+		return queryFactory.select(Projections.constructor(OrderFlatDto.class
+				, qOrder.id, qOrder.member.name, qOrder.orderDate, qOrder.orderStatus, qOrder.delivery.address
+				, qOrderItem.item.name , qOrderItem.orderPrice , qOrderItem.count)).distinct()
+				.from(qOrder)
+					.leftJoin(qOrder.member , qMember)
+					.leftJoin(qOrder.delivery , qDelivery)
+					.leftJoin(qOrder.orderitems, qOrderItem)
+				.where(qName(os),qStatus(os))
+				.orderBy(qOrder.orderDate.desc())
+				.fetch();
+	}
+
+	
 	private List<OrderItemDto> findItems(Long id){
 		return queryFactory.select(Projections.constructor(OrderItemDto.class 
 							,qOrderItem.order.id , qOrderItem.item.name , qOrderItem.orderPrice , qOrderItem.count))
@@ -191,7 +230,8 @@ public class OrderRepository {
 				" join o.member m"+ 
 				" join o.delivery d", SimpleOrderDto.class).getResultList();
 	}
-
+	
+	
 	
 	//동적쿼리용 메소드 START
 	//이름
@@ -208,6 +248,10 @@ public class OrderRepository {
 		}
 		return qOrder.orderStatus.eq(os.getOrderStatus());
 	}
+
+	
+
+	
 
 	
 

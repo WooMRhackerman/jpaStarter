@@ -11,6 +11,7 @@ import jpabook.jpashop.domain.Address;
 import jpabook.jpashop.domain.Order;
 import jpabook.jpashop.domain.OrderItem;
 import jpabook.jpashop.domain.OrderStatus;
+import jpabook.jpashop.repository.OrderFlatDto;
 import jpabook.jpashop.repository.OrderRepository;
 import jpabook.jpashop.repository.OrderSearch;
 import jpabook.jpashop.service.OrderService;
@@ -69,6 +70,22 @@ public class OrderApiController {
 		//List<jpabook.jpashop.repository.OrderDto> orderDto = findAllqueryDsl.stream().map(o -> new jpabook.jpashop.repository.OrderDto(o)).collect(Collectors.toList());
 		
 		return findAllqueryDsl;
+	}
+	
+	@GetMapping("/api/v5/orders")
+	public List<jpabook.jpashop.repository.OrderDto> ordersV5(){
+		List<jpabook.jpashop.repository.OrderDto> findAllqueryDsl = or.findAllqueryDslWithDto3(new OrderSearch());
+		//List<jpabook.jpashop.repository.OrderDto> orderDto = findAllqueryDsl.stream().map(o -> new jpabook.jpashop.repository.OrderDto(o)).collect(Collectors.toList());
+		
+		return findAllqueryDsl;
+	}
+	
+	@GetMapping("/api/v6/orders")
+	public List<OrderFlatDto> ordersV6(){
+		List<OrderFlatDto> findAllqueryDsl = or.findAllqueryDslWithDto4(new OrderSearch());
+		//List<jpabook.jpashop.repository.OrderDto> orderDto = findAllqueryDsl.stream().map(o -> new jpabook.jpashop.repository.OrderDto(o)).collect(Collectors.toList());
+		List<OrderFlatDto> collect = findAllqueryDsl.stream().distinct().collect(Collectors.toList());
+		return collect;
 	}
 	
 	@Data
