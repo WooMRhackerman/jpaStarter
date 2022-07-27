@@ -57,7 +57,7 @@ public class MemberApiController {
 	public UpdateMemberResponse updateMemberv1(@PathVariable("id") Long id, @RequestBody @Valid  UpdateMemberRequest umr) {
 		
 		ms.update(id,umr.getName());
-		
+		System.out.println();
 		Member finOne = ms.finOne(id);
 		return new UpdateMemberResponse(finOne.getId(),finOne.getName());
 	}
